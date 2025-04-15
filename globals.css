@@ -1,7 +1,10 @@
-body, html {
+body {
   margin: 0;
   padding: 0;
-  background-color: #000;
-  overflow: hidden;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: black;
+  color: white;
+  font-family: sans-serif;
+}
+canvas {
+  display: block;
 }
