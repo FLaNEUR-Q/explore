@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars, Text } from '@react-three/drei'
 import * as THREE from 'three'
-
-const keywords = ['AI', 'Universe', 'Exploration', 'Knowledge', 'Imagination']
+import SearchBar from './SearchBar'
+import { useGPT } from './useGPT'
 
 function Satellite({ angle, radius, text }) {
   const ref = useRef()
@@ -23,7 +23,7 @@ function Satellite({ angle, radius, text }) {
   )
 }
 
-function Earth() {
+function Earth({ satellites }) {
   const planetRef = useRef()
   const cloudRef = useRef()
   const atmosphereRef = useRef()
@@ -71,23 +71,32 @@ function Earth() {
           side={THREE.BackSide}
         />
       </mesh>
-      {keywords.map((k, i) => (
-        <Satellite key={k} text={k} angle={(i / keywords.length) * Math.PI * 2} radius={3.5} />
+      {satellites.map((k, i) => (
+        <Satellite key={k} text={k} angle={(i / satellites.length) * Math.PI * 2} radius={3.5} />
       ))}
     </>
   )
 }
 
 export default function App() {
+  const [satellites, setSatellites] = useState(["AI", "Explore", "Stars"])
+  const { search } = useGPT()
+
+  const handleSearch = async (keyword) => {
+    const { keywords } = await search(keyword)
+    if (keywords.length > 0) setSatellites(keywords)
+  }
+
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <>
+      <SearchBar onSearch={handleSearch} />
       <Canvas camera={{ position: [0, 0, 8] }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 2, 5]} intensity={2} />
         <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
-        <Earth />
+        <Earth satellites={satellites} />
         <OrbitControls />
       </Canvas>
-    </div>
+    </>
   )
 }
