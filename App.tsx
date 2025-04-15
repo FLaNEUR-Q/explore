@@ -88,7 +88,12 @@ export default function App() {
   }
 
   return (
-    <>
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
       <SearchBar onSearch={handleSearch} />
       <Canvas camera={{ position: [0, 0, 8] }}>
         <ambientLight intensity={0.7} />
@@ -97,6 +102,6 @@ export default function App() {
         <Earth satellites={satellites} />
         <OrbitControls />
       </Canvas>
-    </>
+    </div>
   )
 }
