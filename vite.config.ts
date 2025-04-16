@@ -7,9 +7,4 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-  define: {
-    'process.env': {
-      VITE_OPENAI_API_KEY: JSON.stringify(process.env.VITE_OPENAI_API_KEY)
-    }
-  }
 })

@@ -1,124 +1,61 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Stars, OrbitControls, Text } from '@react-three/drei'
+import { Stars, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
-const fetchGPTData = async (keyword) => {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{
-        role: 'user',
-        content: `Imagine a planet that represents the word "${keyword}". Reply ONLY with JSON in the following format:
-{
-  "color": "#00FF00",
-  "summary": "A short poetic summary of the world.",
-  "keywords": ["one", "two", "three"]
-}`
-      }],
-      temperature: 0.7
-    })
-  })
-  const data = await res.json()
-  try {
-    return JSON.parse(data.choices?.[0]?.message?.content)
-  } catch {
-    return {
-      color: '#3c80ff',
-      summary: 'A peaceful blue Earth.',
-      keywords: ['life', 'water', 'sky']
-    }
-  }
+function generateRandomColor(keyword: string) {
+  const hash = Array.from(keyword).reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const hue = hash % 360
+  return `hsl(${hue}, 60%, 55%)`
 }
 
-function Planet() {
-  const planetRef = useRef()
-  const cloudRef = useRef()
-
-  const texture = new THREE.TextureLoader().load("https://raw.githubusercontent.com/rajatdiptabiswas/planet-textures/main/2k_earth_daymap.jpg")
-  const cloudTexture = new THREE.TextureLoader().load("https://threejs.org/examples/textures/planets/earth_clouds_1024.png")
+function Planet({ color }: { color: string }) {
+  const meshRef = useRef<THREE.Mesh>(null!)
+  const bump = new THREE.TextureLoader().load("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moonbump1k.jpg")
+  const clouds = new THREE.TextureLoader().load("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earthcloudmap.jpg")
 
   useFrame(() => {
-    if (planetRef.current) planetRef.current.rotation.y += 0.0015
-    if (cloudRef.current) cloudRef.current.rotation.y += 0.002
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.002
+    }
   })
 
   return (
-    <>
-      <mesh ref={planetRef}>
-        <sphereGeometry args={[2, 64, 64]} />
-        <meshStandardMaterial
-          map={texture}
-          color="white"
-          metalness={0.3}
-          roughness={0.8}
-        />
-      </mesh>
-      <mesh ref={cloudRef}>
-        <sphereGeometry args={[2.02, 64, 64]} />
-        <meshStandardMaterial
-          map={cloudTexture}
-          transparent
-          opacity={0.35}
-          depthWrite={false}
-        />
-      </mesh>
-    </>
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[2, 64, 64]} />
+      <meshStandardMaterial
+        color={color}
+        bumpMap={bump}
+        bumpScale={0.1}
+        metalness={0.4}
+        roughness={0.7}
+        opacity={0.9}
+        transparent
+      />
+    </mesh>
   )
 }
 
 export default function App() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [summary, setSummary] = useState('A peaceful blue Earth.')
-  const [keywords, setKeywords] = useState(['life', 'water', 'sky'])
-  const [loading, setLoading] = useState(false)
+  const [planetColor, setPlanetColor] = useState(generateRandomColor('default'))
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!searchTerm.trim()) return
-    setLoading(true)
-    const result = await fetchGPTData(searchTerm.trim())
-    setSummary(result.summary)
-    setKeywords(result.keywords)
-    setSearchTerm('')
-    setLoading(false)
-  }
-
-  const handleKeywordClick = async (keyword) => {
-    setLoading(true)
-    const result = await fetchGPTData(keyword)
-    setSummary(result.summary)
-    setKeywords(result.keywords)
-    setLoading(false)
+    const trimmed = searchTerm.trim().toLowerCase()
+    if (!trimmed) return
+    const color = generateRandomColor(trimmed)
+    setPlanetColor(color)
   }
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas camera={{ position: [0, 0, 7] }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[0, 0, 5]} intensity={3} />
-        <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
-        <Planet />
-        <Text position={[0, -3.2, 0]} fontSize={0.35} color="white">
-          {summary}
-        </Text>
-        {keywords.map((k, i) => (
-          <Text
-            key={i}
-            position={[Math.cos(i * 2) * 4, 1.5 - i, Math.sin(i * 2) * 4]}
-            fontSize={0.25}
-            color="skyblue"
-            onClick={() => handleKeywordClick(k)}
-          >
-            {k}
-          </Text>
-        ))}
-        <OrbitControls />
+        <ambientLight />
+        <pointLight position={[10, 10, 10]} />
+        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <Planet color={planetColor} />
+        <OrbitControls enablePan={false} enableZoom={false} />
       </Canvas>
 
       <form
@@ -134,9 +71,8 @@ export default function App() {
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder={loading ? 'GPT is imagining...' : 'Type a world (e.g. volcano, dream)'}
-          disabled={loading}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="Enter a world... e.g. forest, volcano, dream"
           style={{
             padding: '1rem 1.5rem',
             borderRadius: '999px',
