@@ -1,89 +1,101 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Stars, OrbitControls } from '@react-three/drei'
+import { OrbitControls, Stars, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-function generateRandomColor(keyword: string) {
-  const hash = Array.from(keyword).reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  const hue = hash % 360
-  return `hsl(${hue}, 60%, 55%)`
-}
-
-function Planet({ color }: { color: string }) {
-  const meshRef = useRef<THREE.Mesh>(null!)
-  const bump = new THREE.TextureLoader().load("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moonbump1k.jpg")
-  const clouds = new THREE.TextureLoader().load("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earthcloudmap.jpg")
-
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += 0.002
+function Satellite({ angle, radius, text }) {
+  const ref = useRef()
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    const x = radius * Math.cos(angle + t * 0.2)
+    const z = radius * Math.sin(angle + t * 0.2)
+    if (ref.current) {
+      ref.current.position.set(x, 0.8, z)
     }
   })
 
   return (
-    <mesh ref={meshRef}>
-      <sphereGeometry args={[2, 64, 64]} />
-      <meshStandardMaterial
-        color={color}
-        bumpMap={bump}
-        bumpScale={0.1}
-        metalness={0.4}
-        roughness={0.7}
-        opacity={0.9}
-        transparent
-      />
-    </mesh>
+    <Text ref={ref} fontSize={0.3} color="white">
+      {text}
+    </Text>
+  )
+}
+
+function Earth({ satellites }) {
+  const planetRef = useRef()
+  const cloudRef = useRef()
+  const atmosphereRef = useRef()
+
+  const texture = new THREE.TextureLoader().load("/2k_earth_daymap.jpg")
+  const nightMap = new THREE.TextureLoader().load("/2k_earth_nightmap.jpg")
+  const bumpMap = new THREE.TextureLoader().load("/2k_earth_bump.jpg")
+  const cloudMap = new THREE.TextureLoader().load("/earth_clouds_1024.png")
+
+  useFrame(() => {
+    if (planetRef.current) planetRef.current.rotation.y += 0.001
+    if (cloudRef.current) cloudRef.current.rotation.y += 0.0015
+    if (atmosphereRef.current) atmosphereRef.current.rotation.y += 0.0008
+  })
+
+  return (
+    <>
+      <mesh ref={planetRef}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <meshStandardMaterial
+          map={texture}
+          bumpMap={bumpMap}
+          bumpScale={0.03}
+          emissiveMap={nightMap}
+          emissiveIntensity={1.0}
+          metalness={0.3}
+          roughness={1}
+        />
+      </mesh>
+      <mesh ref={cloudRef}>
+        <sphereGeometry args={[2.02, 64, 64]} />
+        <meshStandardMaterial
+          map={cloudMap}
+          transparent
+          opacity={0.35}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh ref={atmosphereRef}>
+        <sphereGeometry args={[2.15, 64, 64]} />
+        <meshBasicMaterial
+          color="#aadfff"
+          transparent
+          opacity={0.15}
+          side={THREE.BackSide}
+        />
+      </mesh>
+      {satellites.map((k, i) => (
+        <Satellite key={k} text={k} angle={(i / satellites.length) * Math.PI * 2} radius={3.5} />
+      ))}
+    </>
   )
 }
 
 export default function App() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [planetColor, setPlanetColor] = useState(generateRandomColor('default'))
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmed = searchTerm.trim().toLowerCase()
-    if (!trimmed) return
-    const color = generateRandomColor(trimmed)
-    setPlanetColor(color)
-  }
+  const satellites = ["AI", "Explore", "Stars"]
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 0, 7] }}>
-        <ambientLight />
-        <pointLight position={[10, 10, 10]} />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <Planet color={planetColor} />
-        <OrbitControls enablePan={false} enableZoom={false} />
-      </Canvas>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 10,
-        }}
-      >
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          placeholder="Enter a world... e.g. forest, volcano, dream"
-          style={{
-            padding: '1rem 1.5rem',
-            borderRadius: '999px',
-            border: 'none',
-            fontSize: '1.2rem',
-            outline: 'none',
-            width: '320px',
-            textAlign: 'center',
-          }}
-        />
-      </form>
-    </div>
+    <Canvas
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 0
+      }}
+      camera={{ position: [0, 0, 8] }}
+    >
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[5, 2, 5]} intensity={2} />
+      <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
+      <Earth satellites={satellites} />
+      <OrbitControls />
+    </Canvas>
   )
 }
