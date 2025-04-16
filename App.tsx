@@ -88,12 +88,7 @@ export default function App() {
   }
 
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <>
       <div style={{
         position: 'absolute',
         top: '20px',
@@ -103,13 +98,23 @@ export default function App() {
       }}>
         <SearchBar onSearch={handleSearch} />
       </div>
-      <Canvas camera={{ position: [0, 0, 8] }}>
+      <Canvas
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0
+        }}
+        camera={{ position: [0, 0, 8] }}
+      >
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 2, 5]} intensity={2} />
         <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
         <Earth satellites={satellites} />
         <OrbitControls />
       </Canvas>
-    </div>
+    </>
   )
 }
