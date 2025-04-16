@@ -1,1 +1,9 @@
+body, html, #root {
+  height: calc(var(--vh, 1vh) * 100);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: black;
+  font-family: sans-serif;
+}
 canvas { display: block; }
