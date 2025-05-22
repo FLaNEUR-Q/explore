@@ -28,7 +28,6 @@ export default function App() {
 
   return (
     <div className="w-screen h-screen">
-      <SearchBar onSearch={handleSearch} />
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <ambientLight intensity={1.2} />
         <pointLight position={[5, 3, 5]} intensity={2} />
@@ -49,6 +48,7 @@ export default function App() {
         <Summary text={summary} keywords={concepts} />
         <History logs={history} />
       </div>
+      <SearchBar onSearch={handleSearch} />
     </div>
   )
 }
