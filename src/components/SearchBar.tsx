@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { createPortal } from "react-dom"
 
 export default function SearchBar({ onSearch }: { onSearch: (value: string) => void }) {
   const [value, setValue] = useState("")
@@ -11,15 +12,36 @@ export default function SearchBar({ onSearch }: { onSearch: (value: string) => v
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+  const form = (
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        position: "fixed",
+        top: "20px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 99999,
+      }}
+    >
       <input
         type="text"
         placeholder="개념을 입력하세요..."
-        className="px-4 py-2 rounded bg-white/80 text-black w-72 focus:outline-none shadow"
+        style={{
+          padding: "8px 16px",
+          borderRadius: "8px",
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+          color: "#000",
+          width: "280px",
+          fontSize: "16px",
+          border: "none",
+          outline: "none",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        }}
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
     </form>
   )
+
+  return typeof window !== "undefined" ? createPortal(form, document.body) : null
 }
